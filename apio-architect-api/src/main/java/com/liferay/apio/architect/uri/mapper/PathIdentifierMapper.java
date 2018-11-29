@@ -28,10 +28,12 @@ import com.liferay.apio.architect.uri.Path;
  * builders.
  * </p>
  *
- * @author Alejandro Hernández
- * @param  <T> the identifier type to map
+ * @author     Alejandro Hernández
+ * @param      <T> the identifier type to map
+ * @deprecated As of 1.9.0, use {@link IdentifierMapper} instead
  */
 @ConsumerType
+@Deprecated
 public interface PathIdentifierMapper<T> {
 
 	/**
