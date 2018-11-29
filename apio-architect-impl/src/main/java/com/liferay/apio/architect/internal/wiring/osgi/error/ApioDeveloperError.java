@@ -41,16 +41,17 @@ public class ApioDeveloperError extends Error {
 	}
 
 	/**
-	 * Represents the error the developer should throw when an identifier's path
+	 * Represents the error the developer should throw when an identifier's
 	 * mapper is missing.
+	 *
+	 * @review
 	 */
-	public static class MustHavePathIdentifierMapper
-		extends ApioDeveloperError {
+	public static class MustHaveIdentifierMapper extends ApioDeveloperError {
 
-		public MustHavePathIdentifierMapper(Path path) {
+		public MustHaveIdentifierMapper(Path path) {
 			super(
 				join("/", path.getName(), path.getId()) +
-					" path does not have a valid path mapper");
+					" path does not have a valid identifier mapper");
 		}
 
 	}

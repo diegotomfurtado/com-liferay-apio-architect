@@ -19,16 +19,17 @@ import com.liferay.apio.architect.uri.Path;
 import java.util.Optional;
 
 /**
- * Provides methods to map a {@code Path} to an identifier, and vice versa.
+ * Provides methods to map a {@code String} to an identifier, and vice versa.
  *
  * @author Alejandro Hernández
+ * @review
  */
 public interface PathIdentifierMapperManager {
 
 	/**
-	 * Returns {@code true} if a {@link
-	 * com.liferay.apio.architect.uri.mapper.PathIdentifierMapper} for a
-	 * resource has been published.
+	 * Returns {@code true} if an {@link
+	 * com.liferay.apio.architect.uri.mapper.IdentifierMapper} for a resource
+	 * has been published.
 	 *
 	 * @param  name the resource's name
 	 * @return {@code true} if a {@code PathIdentifierMapper} for a resource is
@@ -38,24 +39,26 @@ public interface PathIdentifierMapperManager {
 
 	/**
 	 * Converts a {@code Path} to its equivalent identifier of type {@code T},
-	 * if a valid {@link
-	 * com.liferay.apio.architect.uri.mapper.PathIdentifierMapper} can be found;
-	 * throws a {@code MustHavePathIdentifierMapper} exception otherwise.
+	 * if a valid {@link com.liferay.apio.architect.uri.mapper.IdentifierMapper}
+	 * can be found; throws a {@code MustHaveIdentifierMapper} exception
+	 * otherwise.
 	 *
 	 * @param  path the {@code Path}
 	 * @return the identifier
+	 * @review
 	 */
 	public <T> T mapToIdentifierOrFail(Path path);
 
 	/**
 	 * Converts an identifier to its equivalent {@code Path}, if a valid {@code
-	 * PathIdentifierMapper} can be found. Returns {@code Optional#empty()}
+	 * IdentifierMapper} can be found. Returns {@code Optional#empty()}
 	 * otherwise.
 	 *
 	 * @param  name the resource's name
 	 * @param  identifier the identifier
-	 * @return the {@code Path}, if a valid {@code PathIdentifierMapper} is
-	 *         present; {@code Optional#empty()} otherwise
+	 * @return the {@code Path}, if a valid {@code IdentifierMapper} is present;
+	 *         {@code Optional#empty()} otherwise
+	 * @review
 	 */
 	public <T> Optional<Path> mapToPath(String name, T identifier);
 

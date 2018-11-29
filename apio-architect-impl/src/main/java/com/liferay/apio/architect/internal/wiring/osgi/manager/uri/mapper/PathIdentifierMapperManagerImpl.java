@@ -19,12 +19,11 @@ import static com.liferay.apio.architect.internal.wiring.osgi.util.GenericUtil.g
 
 import com.liferay.apio.architect.functional.Try;
 import com.liferay.apio.architect.identifier.Identifier;
-import com.liferay.apio.architect.internal.unsafe.Unsafe;
-import com.liferay.apio.architect.internal.wiring.osgi.error.ApioDeveloperError.MustHavePathIdentifierMapper;
+import com.liferay.apio.architect.internal.wiring.osgi.error.ApioDeveloperError.MustHaveIdentifierMapper;
 import com.liferay.apio.architect.internal.wiring.osgi.manager.base.ClassNameBaseManager;
 import com.liferay.apio.architect.internal.wiring.osgi.manager.representable.IdentifierClassManager;
 import com.liferay.apio.architect.uri.Path;
-import com.liferay.apio.architect.uri.mapper.PathIdentifierMapper;
+import com.liferay.apio.architect.uri.mapper.IdentifierMapper;
 
 import java.util.Optional;
 
@@ -36,47 +35,47 @@ import org.osgi.service.component.annotations.Reference;
  */
 @Component(service = PathIdentifierMapperManager.class)
 public class PathIdentifierMapperManagerImpl
-	extends ClassNameBaseManager<PathIdentifierMapper>
+	extends ClassNameBaseManager<IdentifierMapper>
 	implements PathIdentifierMapperManager {
 
 	public PathIdentifierMapperManagerImpl() {
-		super(PathIdentifierMapper.class, 0);
+		super(IdentifierMapper.class, 0);
 	}
 
 	@Override
 	public boolean hasPathIdentifierMapper(String name) {
-		return _getPathIdentifierMapperTry(name).isSuccess();
+		return _getIdentifierMapperTry(name).isSuccess();
 	}
 
 	@Override
 	public <T> T mapToIdentifierOrFail(Path path) {
-		Try<PathIdentifierMapper<T>> pathIdentifierMapperTry =
-			_getPathIdentifierMapperTry(path.getName());
+		Try<IdentifierMapper<T>> pathIdentifierMapperTry =
+			_getIdentifierMapperTry(path.getName());
 
 		return pathIdentifierMapperTry.map(
-			service -> service.map(path)
+			service -> service.map(path.getId())
 		).orElseGet(
-			() -> _getReusablePathIdentifierMapper(path)
+			() -> _getReusableIdentifierMapperOptional(path)
 		);
 	}
 
 	@Override
 	public <T> Optional<Path> mapToPath(String name, T identifier) {
-		Try<PathIdentifierMapper<T>> pathIdentifierMapperTry =
-			_getPathIdentifierMapperTry(name);
+		Try<IdentifierMapper<T>> pathIdentifierMapperTry =
+			_getIdentifierMapperTry(name);
 
-		Path value = pathIdentifierMapperTry.map(
-			service -> service.map(name, identifier)
+		Path path = pathIdentifierMapperTry.map(
+			service -> service.map(identifier)
+		).map(
+			id -> new Path(name, id)
 		).orElseGet(
 			() -> _getReusablePath(name, identifier)
 		);
 
-		return Optional.ofNullable(value);
+		return Optional.ofNullable(path);
 	}
 
-	private <T> Try<PathIdentifierMapper<T>> _getPathIdentifierMapperTry(
-		String name) {
-
+	private <T> Try<IdentifierMapper<T>> _getIdentifierMapperTry(String name) {
 		return Try.success(
 			name
 		).mapOptional(
@@ -86,36 +85,25 @@ public class PathIdentifierMapperManagerImpl
 		).mapOptional(
 			this::getServiceOptional
 		).map(
-			Unsafe::unsafeCast
+			identifierMapper -> (IdentifierMapper<T>)identifierMapper
 		);
 	}
 
-	private <T> Path _getReusablePath(String name, T identifier) {
-		Optional<PathIdentifierMapper<T>> pathIdentifierMapper =
-			_getReusablePathIdentifierMapper(name);
+	private <T> T _getReusableIdentifierMapperOptional(Path path) {
+		Optional<IdentifierMapper<T>> identifierMapperOptional =
+			_getReusableIdentifierMapperOptional(path.getName());
 
-		return pathIdentifierMapper.map(
-			service -> service.map(name, identifier)
-		).orElse(
-			null
-		);
-	}
-
-	private <T> T _getReusablePathIdentifierMapper(Path path) {
-		Optional<PathIdentifierMapper<T>> pathIdentifierMapper =
-			_getReusablePathIdentifierMapper(path.getName());
-
-		return pathIdentifierMapper.filter(
+		return identifierMapperOptional.filter(
 			__ -> path.getId() != null && !"__".equals(path.getId())
 		).map(
-			service -> service.map(path)
+			service -> service.map(path.getId())
 		).orElseThrow(
-			() -> new MustHavePathIdentifierMapper(path)
+			() -> new MustHaveIdentifierMapper(path)
 		);
 	}
 
-	private <T> Optional<PathIdentifierMapper<T>>
-		_getReusablePathIdentifierMapper(String name) {
+	private <T> Optional<IdentifierMapper<T>>
+		_getReusableIdentifierMapperOptional(String name) {
 
 		Optional<Class<?>> reusableIdentifierClassOptional =
 			INSTANCE.getReusableIdentifierClassOptional(name);
@@ -123,7 +111,20 @@ public class PathIdentifierMapperManagerImpl
 		return reusableIdentifierClassOptional.flatMap(
 			this::getServiceOptional
 		).map(
-			Unsafe::unsafeCast
+			identifierMapper -> (IdentifierMapper<T>)identifierMapper
+		);
+	}
+
+	private <T> Path _getReusablePath(String name, T identifier) {
+		Optional<IdentifierMapper<T>> identifierMapperOptional =
+			_getReusableIdentifierMapperOptional(name);
+
+		return identifierMapperOptional.map(
+			identifierMapper -> identifierMapper.map(identifier)
+		).map(
+			id -> new Path(name, id)
+		).orElse(
+			null
 		);
 	}
 
