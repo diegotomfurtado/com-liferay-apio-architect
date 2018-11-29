@@ -14,6 +14,8 @@
 
 package com.liferay.apio.architect.internal.wiring.osgi.error;
 
+import static java.lang.String.join;
+
 import com.liferay.apio.architect.uri.Path;
 
 /**
@@ -46,7 +48,9 @@ public class ApioDeveloperError extends Error {
 		extends ApioDeveloperError {
 
 		public MustHavePathIdentifierMapper(Path path) {
-			super(path.asURI() + " path does not have a valid path mapper");
+			super(
+				join("/", path.getName(), path.getId()) +
+					" path does not have a valid path mapper");
 		}
 
 	}

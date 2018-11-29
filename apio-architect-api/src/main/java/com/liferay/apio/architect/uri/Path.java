@@ -31,8 +31,10 @@ public class Path {
 	/**
 	 * Returns the current resource's path as a URI.
 	 *
-	 * @return the current resource's path as a URI
+	 * @return     the current resource's path as a URI
+	 * @deprecated As of 1.9.0, with no direct replacement
 	 */
+	@Deprecated
 	public String asURI() {
 		return getName() + "/" + getId();
 	}
