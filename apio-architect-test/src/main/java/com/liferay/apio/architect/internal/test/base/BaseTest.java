@@ -69,6 +69,7 @@ import org.osgi.util.tracker.ServiceTracker;
  *
  * @author Alejandro Hernández
  */
+@SuppressWarnings({"SameParameterValue", "unused"})
 public class BaseTest {
 
 	@BeforeClass
@@ -215,12 +216,28 @@ public class BaseTest {
 	}
 
 	/**
+	 * Returns the number of services implementing a certain service class.
+	 * Returns {@code 0} if any error has occurred.
+	 *
+	 * @review
+	 */
+	protected static int getNumberOfServicesImplementing(Class<?> aClass) {
+		return Try.of(
+			() -> _bundleContext.getServiceReferences(aClass, null)
+		).map(
+			Collection::size
+		).getOrElse(
+			0
+		);
+	}
+
+	/**
 	 * Registers a new service with the provided properties. Returns the service
 	 * registration.
 	 *
 	 * <p>
 	 * Warning! This method must be only used in a specific test lifecycle
-	 * (inside methods annotated with {@link Before}, {@link After} or {@link
+	 * (inside methods annotated with {@link Before}, {@link After} or {@code
 	 * org.junit.Test}.
 	 * </p>
 	 *
@@ -249,7 +266,7 @@ public class BaseTest {
 	 *
 	 * <p>
 	 * Warning! This method must be only used in a specific test lifecycle
-	 * (inside methods annotated with {@link Before}, {@link After} or {@link
+	 * (inside methods annotated with {@link Before}, {@link After} or {@code
 	 * org.junit.Test}.
 	 * </p>
 	 *
@@ -273,7 +290,7 @@ public class BaseTest {
 	 *
 	 * <p>
 	 * Warning! This method must be only used in a specific test lifecycle
-	 * (inside methods annotated with {@link Before}, {@link After} or {@link
+	 * (inside methods annotated with {@link Before}, {@link After} or {@code
 	 * org.junit.Test}.
 	 * </p>
 	 *
@@ -327,6 +344,37 @@ public class BaseTest {
 			client::target
 		).getOrElseThrow(
 			t -> new AssertionError("Unable to create a valid WebTarget", t)
+		);
+	}
+
+	/**
+	 * Returns the service for a certain class containing the provided {@code
+	 * property}-{@code value} pair. Returns {@code null} if service could not
+	 * be found.
+	 *
+	 * @param  tClass the service's class
+	 * @param  property the property key
+	 * @param  value the property value
+	 * @return the service; {@code null} if no service could be found
+	 * @review
+	 */
+	@SuppressWarnings("unchecked")
+	protected <T, S extends T> S getService(
+		Class<T> tClass, String property, Object value) {
+
+		return Try.of(
+			() -> _bundleContext.getServiceReferences(tClass, null)
+		).transform(
+			Try::toJavaStream
+		).flatMap(
+			Collection::stream
+		).filter(
+			sr -> value.equals(sr.getProperty(property))
+		).findFirst(
+		).map(
+			reference -> (S)_bundleContext.getService(reference)
+		).orElse(
+			null
 		);
 	}
 
