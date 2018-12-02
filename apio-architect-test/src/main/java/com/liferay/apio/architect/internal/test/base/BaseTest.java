@@ -26,6 +26,15 @@ import static org.osgi.service.jaxrs.runtime.JaxrsServiceRuntimeConstants.JAX_RS
 import static org.osgi.service.jaxrs.whiteboard.JaxrsWhiteboardConstants.JAX_RS_APPLICATION_SELECT;
 import static org.osgi.service.jaxrs.whiteboard.JaxrsWhiteboardConstants.JAX_RS_RESOURCE;
 
+import static org.slf4j.Logger.ROOT_LOGGER_NAME;
+import static org.slf4j.LoggerFactory.getLogger;
+
+import ch.qos.logback.classic.Level;
+import ch.qos.logback.classic.Logger;
+import ch.qos.logback.classic.spi.ILoggingEvent;
+import ch.qos.logback.core.Appender;
+import ch.qos.logback.core.read.ListAppender;
+
 import io.vavr.Function1;
 import io.vavr.collection.HashMap;
 import io.vavr.collection.List;
@@ -82,6 +91,12 @@ public class BaseTest {
 
 	@AfterClass
 	public static void tearDownClass() {
+		if (classListAppender != null) {
+			_resetRootLogger("CLASS_APPENDER");
+
+			classListAppender = null;
+		}
+
 		_iterateAndExecute(
 			_classRegistrations, ServiceRegistration::unregister);
 		_iterateAndExecute(
@@ -102,6 +117,12 @@ public class BaseTest {
 
 	@After
 	public void tearDown() {
+		if (testListAppender != null) {
+			_resetRootLogger("TEST_APPENDER");
+
+			testListAppender = null;
+		}
+
 		_clientBuilderTracker.close();
 		_iterateAndExecute(_registrations, ServiceRegistration::unregister);
 		_iterateAndExecute(
@@ -123,6 +144,24 @@ public class BaseTest {
 			t -> new AssertionError(
 				"Unable to create JSON object out of entity: " + entity, t)
 		);
+	}
+
+	/**
+	 * Attaches a new logs mechanism to the OSGi runtime (available through the
+	 * variable {@link #testListAppender}) with the provided {@link Level}.
+	 *
+	 * <p>Warning! This method must be only used in a specific class test
+	 * lifecycle
+	 * (inside methods annotated with {@link BeforeClass} or {@link AfterClass}.
+	 *
+	 * <p>This method should not be used at the same time than its class
+	 * counterpart ({@link #beforeTestAttachLoggerWithLevel(Level)}).
+	 *
+	 * @param  level the new level for the logger
+	 * @review
+	 */
+	protected static void beforeClassAttachLoggerWithLevel(Level level) {
+		classListAppender = _updateRootLogger(level, "CLASS_APPENDER");
 	}
 
 	/**
@@ -229,6 +268,24 @@ public class BaseTest {
 		).getOrElse(
 			0
 		);
+	}
+
+	/**
+	 * Attaches a new logs mechanism to the OSGi runtime (available through the
+	 * variable {@link #testListAppender}) with the provided {@link Level}.
+	 *
+	 * <p>Warning! This method must be only used in a specific test lifecycle
+	 * (inside methods annotated with {@link Before}, {@link After} or {@code
+	 * org.junit.Test}.
+	 *
+	 * <p>This method should not be used at the same time than its class
+	 * counterpart ({@link #beforeClassAttachLoggerWithLevel(Level)}.
+	 *
+	 * @param  level the new level for the logger
+	 * @review
+	 */
+	protected void beforeTestAttachLoggerWithLevel(Level level) {
+		testListAppender = _updateRootLogger(level, "TEST_APPENDER");
 	}
 
 	/**
@@ -379,6 +436,14 @@ public class BaseTest {
 	}
 
 	/**
+	 * The list appender containing the logs of a class execution.
+	 *
+	 * @see    #beforeClassAttachLoggerWithLevel(Level)
+	 * @review
+	 */
+	protected static ListAppender<ILoggingEvent> classListAppender;
+
+	/**
 	 * This constant should be used when no properties are required on
 	 * register/unregister methods.
 	 *
@@ -389,6 +454,14 @@ public class BaseTest {
 	 * @review
 	 */
 	protected static final Map<String, Object> noProperties = HashMap.empty();
+
+	/**
+	 * The list appender containing the logs of a test execution.
+	 *
+	 * @see    #beforeTestAttachLoggerWithLevel(Level)
+	 * @review
+	 */
+	protected ListAppender<ILoggingEvent> testListAppender;
 
 	private static <T> void _iterateAndExecute(
 		Collection<T> collection, Consumer<T> consumer) {
@@ -404,6 +477,18 @@ public class BaseTest {
 				iterator::remove
 			);
 		}
+	}
+
+	private static void _resetRootLogger(String appenderName) {
+		Appender<ILoggingEvent> appender = _rootLogger.getAppender(
+			appenderName);
+
+		_rootLogger.detachAppender(appender);
+
+		appender.stop();
+
+		_rootLogger.setLevel(_rootLoggerOldLevel);
+		_rootLogger.addAppender(_rootLoggerOldAppender);
 	}
 
 	private static <T> ComponentDescriptionDTO _unregisterImplementationFor(
@@ -445,6 +530,23 @@ public class BaseTest {
 		);
 	}
 
+	private static ListAppender<ILoggingEvent> _updateRootLogger(
+		Level level, String appenderName) {
+
+		_rootLogger.detachAppender(_rootLoggerOldAppender);
+		_rootLogger.setLevel(level);
+
+		ListAppender<ILoggingEvent> listAppender = new ListAppender<>();
+
+		listAppender.setName(appenderName);
+
+		listAppender.start();
+
+		_rootLogger.addAppender(listAppender);
+
+		return listAppender;
+	}
+
 	@SuppressWarnings({"Convert2MethodRef", "unchecked"})
 	private static final Function<Object, List<String>> _TO_LIST = v -> Match(
 		v
@@ -466,6 +568,11 @@ public class BaseTest {
 			JAX_RS_APPLICATION_SELECT,
 			"(liferay.apio.architect.application=true)", JAX_RS_RESOURCE,
 			"true");
+	private static final Logger _rootLogger = (Logger)getLogger(
+		ROOT_LOGGER_NAME);
+	private static final Appender<ILoggingEvent> _rootLoggerOldAppender =
+		_rootLogger.getAppender("STDERR");
+	private static final Level _rootLoggerOldLevel = _rootLogger.getLevel();
 	private static ServiceComponentRuntime _serviceComponentRuntime;
 
 	private ServiceTracker<ClientBuilder, ClientBuilder> _clientBuilderTracker;
