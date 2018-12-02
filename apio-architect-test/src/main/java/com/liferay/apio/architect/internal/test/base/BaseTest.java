@@ -91,10 +91,10 @@ public class BaseTest {
 
 	@AfterClass
 	public static void tearDownClass() {
-		if (classListAppender != null) {
+		if (classLogs != null) {
 			_resetRootLogger("CLASS_APPENDER");
 
-			classListAppender = null;
+			classLogs = null;
 		}
 
 		_iterateAndExecute(
@@ -117,10 +117,10 @@ public class BaseTest {
 
 	@After
 	public void tearDown() {
-		if (testListAppender != null) {
+		if (testLogs != null) {
 			_resetRootLogger("TEST_APPENDER");
 
-			testListAppender = null;
+			testLogs = null;
 		}
 
 		_clientBuilderTracker.close();
@@ -148,7 +148,7 @@ public class BaseTest {
 
 	/**
 	 * Attaches a new logs mechanism to the OSGi runtime (available through the
-	 * variable {@link #testListAppender}) with the provided {@link Level}.
+	 * variable {@link #testLogs}) with the provided {@link Level}.
 	 *
 	 * <p>Warning! This method must be only used in a specific class test
 	 * lifecycle
@@ -161,7 +161,7 @@ public class BaseTest {
 	 * @review
 	 */
 	protected static void beforeClassAttachLoggerWithLevel(Level level) {
-		classListAppender = _updateRootLogger(level, "CLASS_APPENDER");
+		classLogs = _updateRootLogger(level, "CLASS_APPENDER");
 	}
 
 	/**
@@ -272,7 +272,7 @@ public class BaseTest {
 
 	/**
 	 * Attaches a new logs mechanism to the OSGi runtime (available through the
-	 * variable {@link #testListAppender}) with the provided {@link Level}.
+	 * variable {@link #testLogs}) with the provided {@link Level}.
 	 *
 	 * <p>Warning! This method must be only used in a specific test lifecycle
 	 * (inside methods annotated with {@link Before}, {@link After} or {@code
@@ -285,7 +285,7 @@ public class BaseTest {
 	 * @review
 	 */
 	protected void beforeTestAttachLoggerWithLevel(Level level) {
-		testListAppender = _updateRootLogger(level, "TEST_APPENDER");
+		testLogs = _updateRootLogger(level, "TEST_APPENDER");
 	}
 
 	/**
@@ -441,7 +441,7 @@ public class BaseTest {
 	 * @see    #beforeClassAttachLoggerWithLevel(Level)
 	 * @review
 	 */
-	protected static ListAppender<ILoggingEvent> classListAppender;
+	protected static ListAppender<ILoggingEvent> classLogs;
 
 	/**
 	 * This constant should be used when no properties are required on
@@ -461,7 +461,7 @@ public class BaseTest {
 	 * @see    #beforeTestAttachLoggerWithLevel(Level)
 	 * @review
 	 */
-	protected ListAppender<ILoggingEvent> testListAppender;
+	protected ListAppender<ILoggingEvent> testLogs;
 
 	private static <T> void _iterateAndExecute(
 		Collection<T> collection, Consumer<T> consumer) {
