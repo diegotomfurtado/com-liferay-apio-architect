@@ -32,7 +32,7 @@ public class ProblemJSONErrorMessageMapper implements ErrorMessageMapper {
 
 	@Override
 	public String getMediaType() {
-		return "application/problem+json";
+		return "application/json";
 	}
 
 	@Override
